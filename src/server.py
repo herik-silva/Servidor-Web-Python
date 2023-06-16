@@ -90,6 +90,7 @@ class Server:
             print("Esperando receber uma mensagem do cliente")
             client, address = conn_socket.accept()
             data = client.recv(self.__data_payload)
+            
             if data:
                 self.send_response(data, client)
                 nRequests +=1
