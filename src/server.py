@@ -3,6 +3,7 @@ from core.domain.entities.server_address import ServerAddress
 from core.helpers.filter_element import filter_element
 from routes.public import *
 from core.domain.enum.http_status import HTTP_STATUS
+from concurrent.futures import ThreadPoolExecutor, wait
 
 import os
 
@@ -50,9 +51,9 @@ class Server:
         route = decoded_request.split(" HTTP/1.1")[0]
         return route[4:]
     
-    def send_response(self, data: bytes, client: socket.socket):
+    def send_response(self, data: bytes, client: socket.socket, address):
         route = self.get_route(data)
-
+        print(f"Requisição de {address}")
         print("Rota Solicitada: " + route)
         
         route_found = filter_element(self.__route_list, "route_name", route)
@@ -92,9 +93,10 @@ class Server:
             data = client.recv(self.__data_payload)
             
             if data:
-                self.send_response(data, client)
-                nRequests +=1
+                with ThreadPoolExecutor(5) as executor:
+                    executor.submit(self.send_response, data, client, address)
+                    nRequests += 1
 
-                if nRequests > 20: break
+                # if nRequests > 20: break
 
         conn_socket.close()
