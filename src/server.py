@@ -7,12 +7,15 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 import os
 
+from threading import Semaphore
+
 class Server:
     __server_address: ServerAddress
     __data_payload: int
     __route_list: list[Route]
+    __semaphore: Semaphore
 
-    def __init__(self, host: str = 'localhost', port: int = 8000):
+    def __init__(self, host: str = 'localhost', port: int = 8000, limit_concurrent_req: int = 100):
         self.__server_address = ServerAddress(host, port)
         print(self.__server_address.get_host())
         self.__data_payload = 2048
@@ -20,6 +23,7 @@ class Server:
             HOME,
             ABOUT
         ]
+        self.__semaphore = Semaphore(limit_concurrent_req)
 
     def set_status(self, status_code: int):
         http_status = {
@@ -96,7 +100,5 @@ class Server:
                 with ThreadPoolExecutor(5) as executor:
                     executor.submit(self.send_response, data, client, address)
                     nRequests += 1
-
-                # if nRequests > 20: break
 
         conn_socket.close()
